@@ -1,6 +1,7 @@
 import cluster from "cluster";
 import dotenvFlow from "dotenv-flow";
 import * as os from "os";
+import * as process from "process";
 import Server from "./modules/main/application/server";
 
 dotenvFlow.config({
@@ -14,15 +15,16 @@ if (cluster.isPrimary) {
     workers = 1;
   }
 
-  console.log(`Start cluster with ${workers} workers`);
+  console.log(`Number of CPUs is ${workers}`);
+  console.log(`Master ${process.pid} is running`);
 
   for (let i = 0; i < workers; i++) {
-    const worker = cluster.fork().process;
-    console.log(`worker %s started. ${worker.pid}`);
+    cluster.fork();
   }
 
-  cluster.on("exit", (worker) => {
-    console.log(`worker %s died. restart... ${worker.process.pid}`);
+  cluster.on("exit", (worker, code, signal) => {
+    console.log(`worker ${worker.process.pid} died`);
+    console.log("Let's fork another worker!");
     cluster.fork();
   });
 } else {
